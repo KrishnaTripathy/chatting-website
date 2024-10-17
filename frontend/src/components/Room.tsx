@@ -6,23 +6,21 @@ import { motion } from "framer-motion";
 
 export const Room = ({
   name,
-  
   setJoined,
   darkMode,
   setDarkMode,
   toggleDarkMode,
 }: {
   name: string;
-  
   setJoined: React.Dispatch<React.SetStateAction<boolean>>;
   darkMode: boolean;
   setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
   toggleDarkMode: () => void;
 }) => {
   const [lobby, setLobby] = useState(true);
-  const [socket, setSocket] = useState<null | WebSocket>(null);
-  const [sendingPc, setSendingPc] = useState<null | RTCPeerConnection>(null);
-  const [receivingPc, setReceivingPc] = useState<null | RTCPeerConnection>(
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [sendingPc, setSendingPc] = useState<RTCPeerConnection | null>(null);
+  const [receivingPc, setReceivingPc] = useState<RTCPeerConnection | null>(
     null
   );
   const [remoteMediaStream, setRemoteMediaStream] =
@@ -51,7 +49,6 @@ export const Room = ({
     setReceivingPc(null);
   }
 
-  // WebSocket setup and management
   useEffect(() => {
     const socket = new WebSocket(
       "wss://ccme03ln92.execute-api.eu-north-1.amazonaws.com/production/"
@@ -78,7 +75,6 @@ export const Room = ({
         setLobby(false);
         const pc = new RTCPeerConnection();
         const dc = pc.createDataChannel("chat");
-
 
         pc.createOffer()
           .then((offer) => pc.setLocalDescription(offer))
@@ -263,14 +259,6 @@ export const Room = ({
     return peerConnection;
   }
 
- 
-
-  const chatMessageVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -20 },
-  };
-
   const buttonVariants = {
     hover: { scale: 1.1 },
     tap: { scale: 0.9 },
@@ -278,36 +266,39 @@ export const Room = ({
 
   return (
     <div
-      className={`flex flex-col h-screen ${
-        darkMode ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-800"
-      }`}
-    >
-      <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} name={name} />
-      <div
-        className={`bg-${darkMode ? "gray-900" : "gray-200"} text-${
-          darkMode ? "white" : "black"
-        } h-full flex flex-col items-center justify-center py-8`}
-      >
-        <div className="flex w-full justify-center">
-          <div className="flex flex-col items-center w-full">
-            {!lobby && (
-              <div className="w-full text-center mb-2">
-                You are now chatting with {partnerName}
-              </div>
-            )}
+    className={`flex flex-col h-screen ${
+      darkMode ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-800"
+    } p-4`}
+  >
+    <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} name={name} />
+    <div className={`flex-grow flex flex-col items-center justify-center`}>
+      <div className="flex w-full justify-center">
+        <div className="flex flex-col items-center w-full">
+          {!lobby && (
+            <div className="w-full text-center mb-2">
+              You are now chatting with {partnerName}
+            </div>
+          )}
+  
+          {/* New message indicating that a partner is being found */}
+          {lobby && (
+            <div className="w-full text-center mb-2 text-gray-500">
+              Finding new partner...
+            </div>
+          )}
+  
+          <div
+            className={`w-full md:w-1/2 ${
+              darkMode ? "bg-gray-700" : "bg-gray-100"
+            } p-4 rounded-lg shadow-md flex flex-col h-full`}
+          >
             <div
-              className={`w-full md:w-1/2 ${
-                darkMode ? "bg-gray-700" : "bg-gray-100"
-              } p-4 rounded-lg shadow-md h-[500px] overflow-y-auto scrollbar-hide scroll-smooth flex flex-col-reverse`}
+              className={`flex-grow  overflow-y-auto scrollbar-hide scroll-smooth flex flex-col-reverse`}
+              style={{ maxHeight: 'calc(100vh - 200px)' }} 
             >
               {chatMessages.map((message, index) => (
                 <motion.div
                   key={index}
-                  variants={chatMessageVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  transition={{ duration: 0.3 }}
                   className={`flex mb-4 ${
                     message[0] === "You" ? "justify-start" : "justify-end"
                   }`}
@@ -324,9 +315,9 @@ export const Room = ({
                         message[0] === "You"
                           ? "bg-blue-500 text-white"
                           : darkMode
-                          ? "bg-gray-200"
+                          ? "bg-gray-500"
                           : "bg-[#FFFBF5]"
-                      } rounded-md p-2 max-w-64 break-words min-w-16`}
+                      } rounded-md p-2 max-w-64 break-words`}
                     >
                       {message[1]}
                     </div>
@@ -335,109 +326,108 @@ export const Room = ({
                 </motion.div>
               ))}
             </div>
-
-            <div className="mt-2 w-full md:w-1/2 relative">
-              {/* Toggle Emoji Picker */}
-              <motion.button
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="absolute left-2 top-2/4 transform -translate-y-2/4 text-gray-700 dark:text-white"
+          </div>
+  
+          <div className="mt-2 w-full md:w-1/2 relative">
+            <motion.button
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="absolute left-2 top-2/4 transform -translate-y-2/4 text-gray-700 dark:text-white"
+            >
+              😀
+            </motion.button>
+            {showEmojiPicker && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.1 }}
+                className="absolute bottom-10 left-0 z-10"
               >
-                😀
-              </motion.button>
-
-              {/* Show Emoji Picker */}
-              {showEmojiPicker && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  className="absolute bottom-10 left-0 z-10"
-                >
-                  <EmojiPicker onEmojiClick={onEmojiClick} />
-                </motion.div>
-              )}
-
-              {/* Input Field */}
-              <input
-                value={chat}
-                placeholder="Message"
-                onChange={(e) => setChat(e.target.value)}
-                type="text"
-                className={`w-full px-10 py-2 pr-10 border ${
-                  darkMode
-                    ? "border-gray-700 text-white bg-gray-700"
-                    : "border-gray-300 bg-white"
-                } rounded-md focus:outline-none`}
-              />
-
-              {/* Send Button */}
-              {chat.trim() && (
-                <motion.button
-                  variants={buttonVariants}
-                  onClick={() => {
-                    if (sendingDc && chat.trim() !== "") {
-                      setChatMessages((prevMessages) => [
-                        ["You", chat],
-                        ...prevMessages,
-                      ]);
-                      sendingDc.send(chat);
-                      setChat("");
-                    }
-                  }}
-                  className="absolute right-2 top-2/4 transform -translate-y-2/4"
-                >
-                  <IoSend
-                    className={`w-6 h-6 ${
-                      darkMode ? "text-white" : "text-gray-700"
-                    }`}
-                  />
-                </motion.button>
-              )}
-            </div>
-
-            <div className="flex mt-4 space-x-4">
-              <motion.button
-                variants={buttonVariants}
-                whileHover="hover"
-                whileTap="tap"
-                onClick={() => {
-                  if (socket) {
-                    handleLeave();
-                    socket.send(JSON.stringify({ type: "leave" }));
+                <EmojiPicker onEmojiClick={onEmojiClick} />
+              </motion.div>
+            )}
+  
+            <input
+              value={chat}
+              placeholder="Message"
+              onChange={(e) => setChat(e.target.value)}
+              type="text"
+              className={`w-full px-10 py-2 pr-10 border ${
+                darkMode
+                  ? "border-gray-700 text-white bg-gray-700"
+                  : "border-gray-300 bg-white text-black"
+              } rounded-md focus:outline-none`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (chat.trim()) {
+                    const newMessage = ["You", chat];
+                    setChatMessages([newMessage, ...chatMessages]);
+                    sendingDc?.send(chat);
+                    setChat("");
                   }
-                }}
-                className={`px-4 py-2 ${
-                  darkMode ? "bg-blue-500" : "bg-blue-600"
-                } text-white rounded-md ${
-                  darkMode ? "hover:bg-blue-600" : "hover:bg-blue-700"
-                }`}
-              >
-                Skip
-              </motion.button>
-
-              <motion.button
-                variants={buttonVariants}
-                whileHover="hover"
-                whileTap="tap"
-                onClick={() => {
-                  if (socket) {
-                    handleLeave();
-                    socket.send(JSON.stringify({ type: "disconnect" }));
-                    setJoined(false);
-                  }
-                }}
-                className={`px-4 py-2 ${
-                  darkMode ? "bg-red-500" : "bg-red-600"
-                } text-white rounded-md ${
-                  darkMode ? "hover:bg-red-600" : "hover:bg-red-700"
-                }`}
-              >
-                Leave
-              </motion.button>
-            </div>
+                }
+              }}
+            />
+            <motion.button
+              variants={buttonVariants}
+              onClick={() => {
+                if (chat.trim()) {
+                  const newMessage = ["You", chat];
+                  setChatMessages([newMessage, ...chatMessages]);
+                  sendingDc?.send(chat);
+                  setChat("");
+                }
+              }}
+              className="absolute right-2 top-2/4 transform -translate-y-2/4 text-2xl text-blue-500"
+            >
+              <IoSend />
+            </motion.button>
+          </div>
+  
+          <div className="flex mt-4 space-x-4">
+            <motion.button
+              variants={buttonVariants}
+              whileHover="hover"
+              whileTap="tap"
+              onClick={() => {
+                if (socket) {
+                  handleLeave();
+                  socket.send(JSON.stringify({ type: "leave" }));
+                }
+              }}
+              className={`px-4 py-2 ${
+                darkMode ? "bg-blue-500" : "bg-blue-600"
+              } text-white rounded-md ${
+                darkMode ? "hover:bg-blue-600" : "hover:bg-blue-700"
+              }`}
+            >
+              Skip
+            </motion.button>
+  
+            <motion.button
+              variants={buttonVariants}
+              whileHover="hover"
+              whileTap="tap"
+              onClick={() => {
+                if (socket) {
+                  handleLeave();
+                  socket.send(JSON.stringify({ type: "disconnect" }));
+                  setJoined(false);
+                }
+              }}
+              className={`px-4 py-2 ${
+                darkMode ? "bg-red-500" : "bg-red-600"
+              } text-white rounded-md ${
+                darkMode ? "hover:bg-red-600" : "hover:bg-red-700"
+              }`}
+            >
+              Leave
+            </motion.button>
           </div>
         </div>
       </div>
     </div>
+  </div>
+  
   );
 };
