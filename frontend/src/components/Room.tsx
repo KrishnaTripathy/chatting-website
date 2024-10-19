@@ -294,7 +294,7 @@ export const Room = ({
           >
             <div
               className={`flex-grow  overflow-y-auto scrollbar-hide scroll-smooth flex flex-col-reverse`}
-              style={{ maxHeight: 'calc(100vh - 200px)' }} 
+               style={{ height: '55vh' }}
             >
               {chatMessages.map((message, index) => (
                 <motion.div
